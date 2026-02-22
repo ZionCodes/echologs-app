@@ -50,7 +50,7 @@ export const actions = {
 
     if (error) return fail(400, { error: error.message, mode: 'login' })
 
-    redirect(303, '/dashboard')
+    redirect(303, '/')
   },
 
   signout: async ({ locals: { supabase } }) => {
