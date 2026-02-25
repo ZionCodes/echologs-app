@@ -3,25 +3,13 @@ import { createBrowserClient, createServerClient, isBrowser } from '@supabase/ss
 
 export const load = async ({ fetch, data, depends }) => {
   depends('supabase:auth')
-
   const supabase = isBrowser()
-    ? createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
-        global: { fetch },
-      })
+    ? createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, { global: { fetch } })
     : createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
         global: { fetch },
-        cookies: {
-          getAll() {
-            return data.cookies
-          },
-        },
+        cookies: { getAll() { return data.cookies } },
       })
-
-  // No getSession() call — that's what was triggering the warning.
-  // Use the already-validated data passed down from +layout.server.js.
-  return {
-    supabase,
-    user: data.user,
-    isAuthenticated: data.isAuthenticated,
-  }
+  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } }    = await supabase.auth.getUser()
+  return { supabase, session, user }
 }
