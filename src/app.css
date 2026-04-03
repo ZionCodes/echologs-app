@@ -311,7 +311,7 @@ html:not(.dark) body::after {
    .dash-nav { position: sticky; top: 0; z-index: 100; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--border); backdrop-filter: blur(20px); background: rgba(8,11,15,.92); transition: background .3s; }
    html:not(.dark) .dash-nav { background: rgba(244,246,248,.92); }
    .dash-nav-logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--green); letter-spacing: -.5px; text-decoration: none; }
-   .dash-nav-email { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
    .dash-theme-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; transition: border-color .2s; }
    .dash-theme-btn:hover { border-color: var(--green); }
    .dash-signout-btn { font-family: var(--font-mono); font-size: 11px; color: var(--muted); background: transparent; border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; cursor: pointer; transition: all .2s; }
@@ -753,3 +753,59 @@ html:not(.dark) .dash-terminal { background: #1a1f26; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+
+/* ── Dashboard vertical rhythm ── */
+.dash-main > * + * {
+  margin-top: 16px;
+}
+
+
+.docs-nav-link { display:block; font-family:var(--font-mono); font-size:11px; color:var(--muted); text-decoration:none; padding:5px 0 5px 10px; border-left:2px solid transparent; transition:all .15s; }
+.docs-nav-link:hover { color:var(--green); border-left-color:var(--green); }
+
+/* ── Docs page ───────────────────────────────────────────────────── */
+.docs-section { padding: 40px 0; border-bottom: 1px solid var(--border); }
+.docs-h2 { font-family: var(--font-sans); font-size: 1.25rem; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+.docs-p { font-family: var(--font-sans); font-size: 14px; color: var(--muted); line-height: 1.8; margin-bottom: 14px; }
+.docs-inline { font-family: var(--font-mono); font-size: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; color: var(--text); }
+.docs-link { color: var(--green); text-decoration: none; font-family: var(--font-mono); font-size: 12px; }
+.docs-link:hover { text-decoration: underline; }
+.docs-callout { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); line-height: 1.7; margin-top: 14px; }
+.docs-nav-link { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-decoration: none; padding: 5px 0 5px 10px; border-left: 2px solid transparent; transition: all .15s; }
+.docs-nav-link:hover { color: var(--green); border-left-color: var(--green); }
+
+/* ── Code blocks ─────────────────────────────────────────────────── */
+.docs-code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+.docs-code-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #161b22; border-bottom: 1px solid #30363d; }
+.docs-code-lang { font-family: var(--font-mono); font-size: 10px; color: #8b949e; text-transform: lowercase; letter-spacing: .5px; }
+.onboard-copy-btn { font-family: var(--font-mono); font-size: 10px; color: #8b949e; background: transparent; border: 1px solid #30363d; border-radius: 5px; padding: 3px 10px; cursor: pointer; transition: all .15s; }
+.onboard-copy-btn:hover { color: #e6edf3; border-color: #8b949e; }
+.onboard-pre { margin: 0; padding: 18px 20px; font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: #e6edf3; overflow-x: auto; white-space: pre; }
+.t-dim { color: #8b949e; }
+
+/* ── Onboarding steps (homepage empty state) ─────────────────────── */
+.onboard-step { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.onboard-step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--muted); flex-shrink: 0; margin-top: 2px; }
+.onboard-step-num.done { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.onboard-step-title { font-family: var(--font-sans); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.onboard-step-sub { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+/* ── Docs ─────────────────────────────────────────────────────────── */
+.docs-section   { padding:40px 0;border-bottom:1px solid var(--border);scroll-margin-top:80px }
+.docs-h2        { font-family:var(--font-sans);font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:12px }
+.docs-p         { font-family:var(--font-sans);font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:14px }
+.docs-inline    { font-family:var(--font-mono);font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--text) }
+.docs-link      { color:var(--green);text-decoration:none }
+.docs-link:hover{ text-decoration:underline }
+.docs-callout   { background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:8px;padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.7;margin-top:14px }
+.docs-code-block{ background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;margin-bottom:6px }
+.docs-code-header{ display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#161b22;border-bottom:1px solid #30363d }
+.docs-code-lang { font-family:var(--font-mono);font-size:10px;color:#8b949e }
+.docs-copy-btn  { font-family:var(--font-mono);font-size:10px;color:#8b949e;background:transparent;border:1px solid #30363d;border-radius:5px;padding:3px 10px;cursor:pointer;transition:all .15s }
+.docs-copy-btn:hover{ color:#e6edf3;border-color:#8b949e }
+
+@keyframes nav-progress {
+  from { opacity: 1; transform: scaleX(0.3); transform-origin: left; }
+  to   { opacity: 1; transform: scaleX(0.9); transform-origin: left; }
+}

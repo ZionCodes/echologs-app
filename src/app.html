@@ -4,11 +4,12 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="EchoLogs — Know when your AI scripts fail" />
+    <meta name="description" content="Monitoring and observability for Python and AI scripts" />
+    <meta name="theme-color" content="#080b0f" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
     %sveltekit.head%
     <script>
-      // Read saved theme or fall back to system preference — runs before page renders
-      // so there is no flash of wrong theme
       const saved = localStorage.getItem('theme')
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (saved === 'dark' || (!saved && prefersDark)) {

@@ -16,19 +16,19 @@
   <div class="dash-card-inner-body dash-donut-wrap">
     <div class="dash-donut-ring">
       <svg width="110" height="110" viewBox="0 0 110 110">
-        <circle cx="55" cy="55" r="42" fill="none" stroke="var(--border)" stroke-width="13"/>
-        <circle cx="55" cy="55" r="42" fill="none" stroke="var(--green)" stroke-width="13"
+        <circle cx="55" cy="55" r="38" fill="none" stroke="var(--border)" stroke-width="12"/>
+        <circle cx="55" cy="55" r="38" fill="none" stroke="var(--green)" stroke-width="12"
           stroke-dasharray="{passArc} {failArc}" stroke-linecap="round"
           style="transform:rotate(-90deg);transform-origin:55px 55px"/>
         {#if failed > 0}
-          <circle cx="55" cy="55" r="42" fill="none" stroke="var(--red)" stroke-width="13"
+          <circle cx="55" cy="55" r="38" fill="none" stroke="var(--red)" stroke-width="12"
             stroke-dasharray="{failArc} {passArc}" stroke-dashoffset="{-passArc}"
             stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:55px 55px"/>
         {/if}
       </svg>
       <div class="dash-donut-inner">
-        <div class="dash-donut-pct">{pctNum}%</div>
-        <div class="dash-donut-lbl">pass rate</div>
+        <div style="font-family:var(--font-sans);font-size:1rem;font-weight:800;color:var(--green);letter-spacing:-0.5px;line-height:1">{pctNum}%</div>
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:2px">pass rate</div>
       </div>
     </div>
     <div class="dash-donut-legend">
