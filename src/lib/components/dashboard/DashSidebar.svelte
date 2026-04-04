@@ -1,6 +1,7 @@
 <script>
   import { page } from '$app/stores'
 
+  let { open = false, onClose } = $props()
   let path = $derived($page.url.pathname)
 
   const nav = [
@@ -33,15 +34,31 @@
   }
 </script>
 
-<aside class="dash-sidebar">
-  {#each nav as group}
+<aside class="dash-sidebar" class:sidebar-mobile-open={open}>
+  <button
+    class="sidebar-close-btn"
+    onclick={onClose}
+    aria-label="Close sidebar"
+  >
+    ✕
+  </button>
+
+  {#each nav as group (group.section)}
     <span class="dash-sidebar-section">{group.section}</span>
-    {#each group.items as item}
+
+    {#each group.items as item (item.href)}
       {@const active = isActive(item.href)}
-      <a href={item.href} class="dash-sidebar-item" class:active>
+
+      <a
+        href={item.href}
+        class="dash-sidebar-item"
+        class:active={active}
+        onclick={onClose}
+      >
         <span class="dash-sidebar-icon">{item.icon}</span>
         {item.label}
       </a>
+
     {/each}
   {/each}
 </aside>

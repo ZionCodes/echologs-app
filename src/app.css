@@ -809,3 +809,219 @@ html:not(.dark) .dash-terminal { background: #1a1f26; }
   from { opacity: 1; transform: scaleX(0.3); transform-origin: left; }
   to   { opacity: 1; transform: scaleX(0.9); transform-origin: left; }
 }
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — Mobile & Tablet
+   ══════════════════════════════════════════════════ */
+
+/* ── Navigation progress bar ── */
+@keyframes nav-progress {
+  from { transform: scaleX(0.2); transform-origin: left; }
+  to   { transform: scaleX(0.85); transform-origin: left; }
+}
+
+/* ── Hamburger — hidden on desktop ── */
+.dash-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.dash-hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--muted);
+  border-radius: 2px;
+  transition: background .15s;
+}
+.dash-hamburger:hover span { background: var(--text); }
+
+/* ── Sidebar overlay — sits BEHIND sidebar ── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 98;
+  /* NO backdrop-filter — it creates stacking context that blocks clicks */
+}
+
+/* ── Sidebar close button — hidden on desktop ── */
+.sidebar-close-btn {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s;
+  z-index: 1;
+}
+.sidebar-close-btn:hover { background: var(--surface2); color: var(--text); }
+
+/* ── Tables always scroll horizontally on any size ── */
+.dash-table { min-width: 480px; }
+
+/* ══════════════════════════════════════════
+   TABLET  ≤ 1024px
+   ══════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .dash-sidebar { width: 190px; }
+  .dash-main    { padding: 24px; }
+
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-cols-3 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  .grid[style*="1.8fr 1fr"],
+  .grid[style*="1fr 1.5fr"],
+  .grid[style*="1fr 1.6fr"] { grid-template-columns: 1fr !important; }
+}
+
+/* ══════════════════════════════════════════
+   MOBILE  ≤ 768px
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Show hamburger */
+  .dash-hamburger { display: flex; }
+
+  /* Nav */
+  .dash-nav { padding: 0 16px; }
+
+  /* Layout — no sidebar column */
+  .dash-app  { display: block; }
+  .dash-main { padding: 16px; }
+
+  /* Sidebar — hidden off-screen by default */
+  .dash-sidebar {
+    position: fixed;
+    top: 58px;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 99; /* above overlay (98), below nothing */
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+
+    /* FULLY OPAQUE — no transparency */
+    background: var(--surface) !important;
+    border-right: 1px solid var(--border);
+    box-shadow: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    /* Relative positioning for close button */
+    position: fixed;
+    padding-top: 52px; /* room for close button */
+  }
+
+  /* Sidebar — visible when open */
+  .dash-sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Show close button on mobile */
+  .sidebar-close-btn { display: flex; }
+
+  /* All grids → single column */
+  .grid-cols-4,
+  .grid-cols-3,
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+
+  div[style*="grid-template-columns:repeat(4"],
+  div[style*="grid-template-columns:repeat(3"],
+  div[style*="grid-template-columns:repeat(2"] { grid-template-columns: 1fr !important; }
+
+  div[style*="1.8fr 1fr"],
+  div[style*="1fr 1.5fr"],
+  div[style*="1fr 1.6fr"],
+  div[style*="200px 1fr"],
+  div[style*="220px 1fr"],
+  div[style*="1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+  /* Tables scroll */
+  .dash-card { overflow-x: auto; }
+  .dash-table { min-width: 520px; }
+
+  /* Hide less critical table columns on mobile */
+  .dash-table th:nth-child(3),
+  .dash-table td:nth-child(3) { display: none; }
+
+  /* Smaller headings */
+  h1[style*="font-size:1.6rem"] { font-size: 1.3rem !important; }
+  h1[style*="font-size:1.5rem"] { font-size: 1.2rem !important; }
+
+  /* Buttons */
+  .dash-btn { font-size: 12px !important; padding: 7px 14px !important; }
+
+  /* Card headers */
+  .dash-card-inner-header { padding: 14px 16px !important; }
+
+  /* Date inputs full width */
+  input[type="date"] { width: 100% !important; }
+
+  /* Usage grid → 1 col */
+  div[style*="grid-template-columns:repeat(3,1fr)"] { grid-template-columns: 1fr !important; }
+
+  /* Execution detail meta → 2x2 */
+  div[style*="grid-template-columns:repeat(4,1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Docs — hide sticky sidebar */
+  div[style*="grid-template-columns:220px 1fr"],
+  div[style*="grid-template-columns:200px 1fr"] { grid-template-columns: 1fr !important; }
+  div[style*="position:sticky;top:80px"] { display: none !important; }
+
+  /* 60-day status grid → 30 cols */
+  div[style*="grid-template-columns:repeat(60,1fr)"] { grid-template-columns: repeat(30, 1fr) !important; }
+
+  /* Script stats strip → 2 cols */
+  div[style*="grid-template-columns:repeat(auto-fill,minmax(190px"] { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* API key new button */
+  .dash-key-new { min-height: 80px !important; }
+
+  /* Onboarding popup */
+  div[style*="max-width:560px"] { margin: 0 8px !important; }
+}
+
+/* ══════════════════════════════════════════
+   SMALL MOBILE  ≤ 480px
+   ══════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  .dash-main { padding: 12px; }
+
+  /* All grids → 1 col */
+  div[style*="grid-template-columns:repeat(4,1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
+  div[style*="grid-template-columns:repeat(auto-fill,minmax(190px"] { grid-template-columns: 1fr !important; }
+
+  /* 60-day grid → 20 cols */
+  div[style*="grid-template-columns:repeat(60,1fr)"] { grid-template-columns: repeat(20, 1fr) !important; }
+
+  /* Hide even more table columns */
+  .dash-table th:nth-child(4),
+  .dash-table td:nth-child(4) { display: none; }
+
+  /* Hide logo text on very small screens */
+  .nav-logo-text { display: none; }
+
+  /* Stat values — smaller */
+  .dash-stat-value { font-size: 1.4rem !important; }
+}
