@@ -41,15 +41,24 @@ export const actions = {
     const form     = await request.formData()
     const email    = form.get('email')?.toString().trim()
     const password = form.get('password')?.toString()
-
+  
     if (!email || !password) {
       return fail(400, { error: 'Email and password are required.', mode: 'login' })
     }
-
+  
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) return fail(400, { error: error.message, mode: 'login' })
-
+  
+    if (error) {
+      // Map Supabase error codes to friendly messages
+      const msg =
+        error.message.includes('Invalid login')        ? 'Incorrect email or password.' :
+        error.message.includes('Email not confirmed')  ? 'Please confirm your email before logging in.' :
+        error.message.includes('rate')                 ? 'Too many attempts. Please wait a moment.' :
+        error.message
+  
+      return fail(400, { error: msg, mode: 'login' })
+    }
+  
     redirect(303, '/')
   },
 

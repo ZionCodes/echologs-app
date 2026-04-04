@@ -1,6 +1,6 @@
 <script>
   import { enhance } from '$app/forms'
-  import { page } from '$app/stores'
+  import { page }    from '$app/stores'
   import AuthShell   from '$lib/components/auth/AuthShell.svelte'
   import AuthHeader  from '$lib/components/auth/AuthHeader.svelte'
   import AuthHeading from '$lib/components/auth/AuthHeading.svelte'
@@ -11,12 +11,17 @@
 
   let { form } = $props()
 
-  let mode            = $state('login')
-  let loading         = $state(false)
+  let mode        = $state('login')
+  let loading     = $state(false)
+  let submitting  = $state(false)  // true while request is in flight — hides stale errors
   let password        = $state('')
   let confirmPassword = $state('')
 
   let urlError = $derived($page.url.searchParams.get('error'))
+
+  // Only show server error when NOT currently submitting a new attempt
+  let visibleError = $derived(submitting ? null : form?.error ?? null)
+  let visibleSuccess = $derived(submitting ? null : (form?.success ? form.message : null))
 
   let passwordMismatch = $derived(
     mode === 'signup' && confirmPassword.length > 0 && password !== confirmPassword
@@ -24,15 +29,15 @@
   let passwordMatch = $derived(
     mode === 'signup' && confirmPassword.length > 0 && password === confirmPassword
   )
-
   let confirmBorderColor = $derived(
     passwordMatch ? 'var(--green)' : passwordMismatch ? 'var(--red)' : undefined
   )
 
   function switchMode() {
-    mode = mode === 'login' ? 'signup' : 'login'
-    password = ''
+    mode            = mode === 'login' ? 'signup' : 'login'
+    password        = ''
     confirmPassword = ''
+    submitting      = false
   }
 </script>
 
@@ -48,11 +53,12 @@
     subtitle={mode === 'login' ? 'Log in to your dashboard.' : 'Start monitoring your AI scripts.'}
   />
 
-  <AuthAlert type="error" message={urlError === 'missing_code'
-    ? 'Something went wrong. Please try again.'
-    : urlError} />
-  <AuthAlert type="error"   message={form?.error} />
-  <AuthAlert type="success" message={form?.success ? form.message : null} />
+  {#if urlError && !submitting}
+    <AuthAlert type="error" message={urlError === 'missing_code' ? 'Something went wrong. Please try again.' : urlError} />
+  {/if}
+
+  <AuthAlert type="error"   message={visibleError} />
+  <AuthAlert type="success" message={visibleSuccess} />
 
   {#if !form?.success}
     <form
@@ -60,10 +66,12 @@
       method="POST"
       action="?/{mode}"
       use:enhance={() => {
-        loading = true
+        loading    = true
+        submitting = true   // immediately hides previous error
         return async ({ update }) => {
           await update({ reset: false })
-          loading = false
+          loading    = false
+          submitting = false  // new response is now in form — show it
         }
       }}
     >
@@ -114,9 +122,20 @@
         </AuthField>
       {/if}
 
+      <!-- Loading state shown inline so user knows something is happening -->
+      {#if loading}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0">
+          <div class="auth-spinner"></div>
+          <span style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">
+            {mode === 'login' ? 'Logging in...' : 'Creating account...'}
+          </span>
+        </div>
+      {/if}
+
       <AuthButton
         {loading}
         label={mode === 'login' ? 'Log in' : 'Create account'}
+        loadingLabel={mode === 'login' ? 'Logging in...' : 'Creating account...'}
         disabled={mode === 'signup' && passwordMismatch}
       />
     </form>

@@ -8,8 +8,12 @@
   import AuthButton  from '$lib/components/auth/AuthButton.svelte'
   import AuthSwitch  from '$lib/components/auth/AuthSwitch.svelte'
 
-  let { form } = $props()
-  let loading  = $state(false)
+  let { form }   = $props()
+  let loading    = $state(false)
+  let submitting = $state(false)
+
+  let visibleError   = $derived(submitting ? null : form?.error   ?? null)
+  let visibleSuccess = $derived(submitting ? null : (form?.success ? form.message : null))
 </script>
 
 <svelte:head>
@@ -24,8 +28,8 @@
     subtitle="Enter your email and we'll send you a reset link."
   />
 
-  <AuthAlert type="error"   message={form?.error} />
-  <AuthAlert type="success" message={form?.success ? form.message : null} />
+  <AuthAlert type="error"   message={visibleError} />
+  <AuthAlert type="success" message={visibleSuccess} />
 
   {#if form?.success}
     <AuthSwitch text="" linkText="← Back to log in" href="/auth" />
@@ -34,10 +38,12 @@
       class="auth-form"
       method="POST"
       use:enhance={() => {
-        loading = true
+        loading    = true
+        submitting = true
         return async ({ update }) => {
           await update({ reset: false })
-          loading = false
+          loading    = false
+          submitting = false
         }
       }}
     >
@@ -50,6 +56,13 @@
         autocomplete="email"
         placeholder="you@example.com"
       />
+
+      {#if loading}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0">
+          <div class="auth-spinner"></div>
+          <span style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">Sending reset link...</span>
+        </div>
+      {/if}
 
       <AuthButton {loading} label="Send reset link" loadingLabel="Sending..." />
     </form>
