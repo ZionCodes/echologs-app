@@ -1,38 +1,38 @@
 <script>
-  // All standard input attributes passed as props
-  // children — optional snippet for the label row (e.g. forgot password link)
   let {
     id,
     name,
     type       = 'text',
     label,
     required   = false,
-    autocomplete = '',
+    minlength  = undefined,
+    autocomplete = undefined,
     placeholder  = '',
-    minlength,
-    value      = $bindable(''),
+    value        = $bindable(''),
+    borderColor  = undefined,
+    autofocus    = false,
     children,
-    borderColor,  // reactive border for confirm password validation
   } = $props()
 </script>
 
 <div class="auth-field">
-  <div class="auth-field-row">
-    <label for={id} class="auth-label">{label}</label>
-    {@render children?.()}
+  <div class="auth-field-label-row">
+    <label class="auth-label" for={id}>{label}</label>
+    {#if children}
+      {@render children()}
+    {/if}
   </div>
   <input
     {id}
     {name}
     {type}
     {required}
+    {minlength}
     {autocomplete}
     {placeholder}
-    {minlength}
+    {autofocus}
     bind:value
     class="auth-input"
-    style={borderColor ? `border-color: ${borderColor};` : ''}
-    onfocus={(e) => { e.currentTarget.style.borderColor = 'var(--green)' }}
-    onblur={(e)  => { e.currentTarget.style.borderColor = borderColor ?? 'var(--border)' }}
+    style={borderColor ? `border-color:${borderColor}` : undefined}
   />
 </div>
