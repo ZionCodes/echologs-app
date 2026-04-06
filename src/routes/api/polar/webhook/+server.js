@@ -4,45 +4,38 @@ import { supabaseAdmin }        from '$lib/server/supabase-admin.js'
 import { POLAR_PRODUCTS }       from '$lib/polar.js'
 import { POLAR_WEBHOOK_SECRET } from '$env/static/private'
 
-// ── Polar signature format ────────────────────────────────────────────────
-// Signed content = "{webhook-id}.{webhook-timestamp}.{rawBody}"
-// Expected header = "v1,<base64-hmac-sha256>"  (space-separated if multiple)
+// ── Signature verification — identical to confirmed working polar-test ─────
+// Polar signs: "webhook-id.webhook-timestamp.rawBody"
+// Header format: "v1,<base64-hmac-sha256>"
 function verifySignature(rawBody, headers) {
-  const webhookId        = headers.get('webhook-id')
-  const webhookTimestamp = headers.get('webhook-timestamp')
-  const webhookSignature = headers.get('webhook-signature')
+  const id        = headers.get('webhook-id')
+  const timestamp = headers.get('webhook-timestamp')
+  const signature = headers.get('webhook-signature')
 
-  if (!webhookId || !webhookTimestamp || !webhookSignature) {
-    console.error('[Polar] Missing signature headers', {
-      webhookId:        !!webhookId,
-      webhookTimestamp: !!webhookTimestamp,
-      webhookSignature: !!webhookSignature,
-    })
+  if (!id || !timestamp || !signature) {
+    console.error('[Polar] Missing headers:', { id: !!id, timestamp: !!timestamp, signature: !!signature })
     return false
   }
 
   // Reject webhooks older than 5 minutes
-  const ts  = parseInt(webhookTimestamp, 10)
+  const ts  = parseInt(timestamp, 10)
   const now = Math.floor(Date.now() / 1000)
   if (Math.abs(now - ts) > 300) {
-    console.error('[Polar] Webhook timestamp too old:', { ts, now })
+    console.error('[Polar] Timestamp too old:', Math.abs(now - ts), 'seconds')
     return false
   }
 
-  const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`
-
+  const signed   = `${id}.${timestamp}.${rawBody}`
   const expected = 'v1,' + createHmac('sha256', POLAR_WEBHOOK_SECRET)
-    .update(signedContent)
+    .update(signed)
     .digest('base64')
 
-  // Polar can send multiple signatures space-separated — any match is valid
-  const valid = webhookSignature.split(' ').some(sig => sig === expected)
+  const valid = signature.split(' ').some(s => s === expected)
 
   if (!valid) {
-    console.error('[Polar] Signature mismatch', {
-      expected,
-      received: webhookSignature,
-    })
+    console.error('[Polar] Signature mismatch')
+    console.error('  Expected:', expected)
+    console.error('  Received:', signature)
   }
 
   return valid
@@ -51,34 +44,72 @@ function verifySignature(rawBody, headers) {
 // ── Find Supabase user by email ───────────────────────────────────────────
 async function getUserIdByEmail(email) {
   if (!email) {
-    console.error('[Polar] No email provided to getUserIdByEmail')
+    console.error('[Polar] No email provided')
     return null
   }
 
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers()
+  console.log('[Polar] Looking up user:', email)
+
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+    perPage: 1000,
+    page:    1,
+  })
+
   if (error) {
-    console.error('[Polar] Error listing users:', error)
+    console.error('[Polar] listUsers error:', error.message)
     return null
   }
 
-  const user = data.users.find(u => u.email === email)
+  const user = data.users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+
   if (!user) {
-    console.error('[Polar] No Supabase user found for email:', email)
+    console.error('[Polar] User not found. Checked:', data.users.length, 'users')
     return null
   }
 
+  console.log('[Polar] Found user:', user.id)
   return user.id
+}
+
+// ── Write to Supabase ─────────────────────────────────────────────────────
+async function upsertSubscription(userId, plan, status, extra = {}) {
+  console.log('[Polar] Upserting:', { userId, plan, status })
+
+  const { data, error } = await supabaseAdmin
+    .from('subscriptions')
+    .upsert({
+      user_id:    userId,
+      plan,
+      status,
+      updated_at: new Date().toISOString(),
+      ...extra,
+    }, { onConflict: 'user_id' })
+    .select()
+
+  if (error) {
+    console.error('[Polar] Upsert error:', error.message, error.details ?? '')
+    return false
+  }
+
+  console.log('[Polar] Upsert OK:', JSON.stringify(data))
+  return true
 }
 
 // ── Webhook handler ───────────────────────────────────────────────────────
 export const POST = async ({ request }) => {
-  // Read raw body ONCE — must be before any other body access
+  // Must read raw body first — before any other access
   const rawBody = await request.text()
 
+  console.log('\n[Polar] ══ Webhook received', new Date().toISOString())
+
+  // Verify signature
   if (!verifySignature(rawBody, request.headers)) {
     return json({ error: 'Invalid signature' }, { status: 403 })
   }
 
+  console.log('[Polar] ✓ Signature valid')
+
+  // Parse body
   let event
   try {
     event = JSON.parse(rawBody)
@@ -87,50 +118,51 @@ export const POST = async ({ request }) => {
   }
 
   const { type, data } = event
-  console.log('[Polar] Event:', type, '| product:', data?.product_id)
+  const email = data?.customer?.email ?? data?.user?.email
+
+  console.log('[Polar] Type:   ', type)
+  console.log('[Polar] Email:  ', email)
+  console.log('[Polar] Product:', data?.product_id)
+  console.log('[Polar] Status: ', data?.status)
 
   try {
     switch (type) {
 
+      // ── Active subscriptions ───────────────────────────────────────────
       case 'subscription.created':
       case 'subscription.updated':
       case 'subscription.active': {
         const product = POLAR_PRODUCTS[data?.product_id]
+
         if (!product) {
           console.warn('[Polar] Unknown product_id:', data?.product_id)
+          console.warn('[Polar] Known IDs:', Object.keys(POLAR_PRODUCTS).join(', '))
           break
         }
 
-        // Email is at data.customer.email per Polar's actual payload
-        const email  = data?.customer?.email
         const userId = await getUserIdByEmail(email)
         if (!userId) break
 
         const isActive = ['active', 'trialing'].includes(data.status)
+        const plan     = isActive ? product.plan : 'free'
 
-        await supabaseAdmin
-          .from('subscriptions')
-          .upsert({
-            user_id:               userId,
-            plan:                  isActive ? product.plan : 'free',
-            status:                data.status,
-            polar_customer_id:     data.customer_id,
-            polar_subscription_id: data.id,
-            current_period_end:    data.current_period_end ?? null,
-            updated_at:            new Date().toISOString(),
-          }, { onConflict: 'user_id' })
+        await upsertSubscription(userId, plan, data.status, {
+          polar_customer_id:     data.customer_id,
+          polar_subscription_id: data.id,
+          current_period_end:    data.current_period_end ?? null,
+        })
 
-        console.log(`[Polar] ${type} → ${email} → ${product.plan} (${data.status})`)
+        console.log(`[Polar] ✓ ${type} → ${email} → ${plan} (${data.status})`)
         break
       }
 
+      // ── Canceled / revoked ─────────────────────────────────────────────
       case 'subscription.canceled':
       case 'subscription.revoked': {
-        const email  = data?.customer?.email
         const userId = await getUserIdByEmail(email)
         if (!userId) break
 
-        await supabaseAdmin
+        const { error } = await supabaseAdmin
           .from('subscriptions')
           .update({
             plan:       'free',
@@ -139,34 +171,38 @@ export const POST = async ({ request }) => {
           })
           .eq('user_id', userId)
 
-        console.log(`[Polar] ${type} → ${email} → downgraded to free`)
+        if (error) {
+          console.error('[Polar] Cancel error:', error.message)
+        } else {
+          console.log(`[Polar] ✓ ${type} → ${email} → free (canceled)`)
+        }
         break
       }
 
+      // ── Lifetime one-time orders ───────────────────────────────────────
       case 'order.created': {
         const product = POLAR_PRODUCTS[data?.product_id]
-        if (!product || product.type !== 'lifetime') {
-          console.log('[Polar] order.created ignored — not lifetime:', data?.product_id)
+
+        if (!product) {
+          console.warn('[Polar] Unknown product_id in order:', data?.product_id)
           break
         }
 
-        const email  = data?.customer?.email
+        if (product.type !== 'lifetime') {
+          console.log('[Polar] order.created — not lifetime, skipping')
+          break
+        }
+
         const userId = await getUserIdByEmail(email)
         if (!userId) break
 
-        await supabaseAdmin
-          .from('subscriptions')
-          .upsert({
-            user_id:            userId,
-            plan:               product.plan,
-            status:             'active',
-            polar_customer_id:  data.customer_id,
-            polar_order_id:     data.id,
-            current_period_end: null, // lifetime — never expires
-            updated_at:         new Date().toISOString(),
-          }, { onConflict: 'user_id' })
+        await upsertSubscription(userId, product.plan, 'active', {
+          polar_customer_id:  data.customer_id,
+          polar_order_id:     data.id,
+          current_period_end: null, // lifetime — never expires
+        })
 
-        console.log(`[Polar] Lifetime order → ${email} → ${product.plan}`)
+        console.log(`[Polar] ✓ Lifetime order → ${email} → ${product.plan}`)
         break
       }
 
@@ -174,9 +210,10 @@ export const POST = async ({ request }) => {
         console.log('[Polar] Unhandled event type:', type)
     }
   } catch (err) {
-    console.error('[Polar] Handler error:', err)
+    console.error('[Polar] Unexpected error:', err.message)
     return json({ error: 'Internal error' }, { status: 500 })
   }
 
+  // Always return 200 — Polar retries on non-200 responses
   return json({ ok: true })
 }
