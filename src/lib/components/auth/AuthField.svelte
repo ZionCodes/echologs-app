@@ -1,11 +1,13 @@
 <script>
+  import { onMount } from 'svelte'
+
   let {
     id,
     name,
-    type       = 'text',
+    type         = 'text',
     label,
-    required   = false,
-    minlength  = undefined,
+    required     = false,
+    minlength    = undefined,
     autocomplete = undefined,
     placeholder  = '',
     value        = $bindable(''),
@@ -13,6 +15,12 @@
     autofocus    = false,
     children,
   } = $props()
+
+  let inputEl = $state(null)
+
+  onMount(() => {
+    if (autofocus && inputEl) inputEl.focus()
+  })
 </script>
 
 <div class="auth-field">
@@ -23,6 +31,7 @@
     {/if}
   </div>
   <input
+    bind:this={inputEl}
     {id}
     {name}
     {type}
@@ -30,7 +39,6 @@
     {minlength}
     {autocomplete}
     {placeholder}
-    {autofocus}
     bind:value
     class="auth-input"
     style={borderColor ? `border-color:${borderColor}` : undefined}

@@ -26,7 +26,7 @@ export async function sendFailureEmail({
         'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        from:    'EchoLogs <alerts@echologs.com>',
+        from:    'EchoLogs <alerts@send.echologs.com>',
         to:      [to],
         subject: `[EchoLogs] Script failed: ${scriptName}`,
         html: `<!DOCTYPE html>

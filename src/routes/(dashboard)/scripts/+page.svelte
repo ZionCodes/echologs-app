@@ -42,7 +42,6 @@
     .scripts-row {
       grid-template-columns: 2fr 80px 110px 130px 40px;
     }
-    .col-sparkline-label { display: none; }
   }
 
   /* Mobile — full card layout, no grid */
