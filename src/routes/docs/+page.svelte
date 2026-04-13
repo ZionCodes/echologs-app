@@ -1,12 +1,39 @@
 <script>
-  import { onMount } from 'svelte'
+  import { onMount, setContext } from 'svelte'
+  import DashNav from '$lib/components/dashboard/DashNav.svelte'
 
-  let { data }     = $props()
-  let { snippets } = $derived(data)
+  let { data }           = $props()
+  let { snippets, user } = $derived(data)
 
   let copied     = $state('')
   let activeId   = $state('quickstart')
   let activeLang = $state('python')
+  let isDark     = $state(true)
+
+  onMount(() => {
+    isDark = document.documentElement.classList.contains('dark')
+
+    const observer = new IntersectionObserver(
+      entries => { for (const e of entries) { if (e.isIntersecting) activeId = e.target.id } },
+      { rootMargin: '-20% 0px -70% 0px' }
+    )
+    sections.forEach(s => {
+      const el = document.getElementById(s.id)
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
+  })
+
+  function toggleTheme() {
+    isDark = !isDark
+    document.documentElement.classList.toggle('dark', isDark)
+    localStorage.setItem('mode-watcher-mode', isDark ? 'dark' : 'light')
+  }
+
+  setContext('theme', {
+    get isDark() { return isDark },
+    toggleTheme,
+  })
 
   function copy(raw, id) {
     navigator.clipboard.writeText(raw)
@@ -30,47 +57,65 @@
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     activeId = id
   }
-
-  onMount(() => {
-    const observer = new IntersectionObserver(
-      entries => { for (const e of entries) { if (e.isIntersecting) activeId = e.target.id } },
-      { rootMargin: '-20% 0px -70% 0px' }
-    )
-    sections.forEach(s => {
-      const el = document.getElementById(s.id)
-      if (el) observer.observe(el)
-    })
-    return () => observer.disconnect()
-  })
 </script>
 
-<svelte:head><title>SDK Docs — EchoLogs</title></svelte:head>
+<svelte:head>
+  <title>SDK Docs — EchoLogs</title>
+  <meta name="description" content="EchoLogs SDK documentation for Python and JavaScript." />
+</svelte:head>
 
 <style>
-  :global(.shiki) { margin:0 !important;padding:18px 20px !important;background:transparent !important;font-size:13px !important;line-height:1.8 !important;overflow-x:auto;white-space:pre }
-  :global(.shiki code) { font-family:var(--font-mono) !important }
+  :global(body::before) { display: none; }
+  :global(body::after)  { display: none; }
+  :global(.shiki) { margin:0 !important; padding:18px 20px !important; background:transparent !important; font-size:13px !important; line-height:1.8 !important; overflow-x:auto; white-space:pre; }
+  :global(.shiki code) { font-family: var(--font-mono) !important; }
+
+  .docs-body {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  @media (max-width: 768px) {
+    .docs-body { grid-template-columns: 1fr; padding: 20px 16px 60px; }
+    .docs-sidebar { display: none; }
+  }
 </style>
 
-<div style="display:grid;grid-template-columns:220px 1fr;gap:48px;align-items:start">
+<DashNav {user} />
+
+<div class="docs-body">
 
   <!-- Sidebar -->
-  <div style="position:sticky;top:80px">
+  <div class="docs-sidebar" style="position:sticky;top:78px">
     <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px">
-      <button onclick={() => activeLang = 'python'} style="flex:1;padding:6px 8px;border-radius:7px;border:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:700;transition:all .15s;background:{activeLang === 'python' ? 'var(--surface)' : 'transparent'};color:{activeLang === 'python' ? 'var(--text)' : 'var(--muted)'}">Python</button>
-      <button onclick={() => activeLang = 'js'} style="flex:1;padding:6px 8px;border-radius:7px;border:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:700;transition:all .15s;background:{activeLang === 'js' ? 'var(--surface)' : 'transparent'};color:{activeLang === 'js' ? 'var(--text)' : 'var(--muted)'}">JavaScript</button>
+      <button
+        onclick={() => activeLang = 'python'}
+        style="flex:1;padding:6px 8px;border-radius:7px;border:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:700;transition:all .15s;background:{activeLang === 'python' ? 'var(--surface)' : 'transparent'};color:{activeLang === 'python' ? 'var(--text)' : 'var(--muted)'};box-shadow:{activeLang === 'python' ? '0 1px 4px rgba(0,0,0,.2)' : 'none'}"
+      >Python</button>
+      <button
+        onclick={() => activeLang = 'js'}
+        style="flex:1;padding:6px 8px;border-radius:7px;border:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:700;transition:all .15s;background:{activeLang === 'js' ? 'var(--surface)' : 'transparent'};color:{activeLang === 'js' ? 'var(--text)' : 'var(--muted)'};box-shadow:{activeLang === 'js' ? '0 1px 4px rgba(0,0,0,.2)' : 'none'}"
+      >JavaScript</button>
     </div>
 
     <div style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted2);margin-bottom:8px;padding-left:12px">On this page</div>
     {#each sections as s (s.id)}
       {@const isActive = activeId === s.id}
-      <button onclick={() => scrollTo(s.id)} style="display:block;width:100%;text-align:left;background:{isActive ? 'var(--green-dim)' : 'transparent'};border:none;border-left:2px solid {isActive ? 'var(--green)' : 'transparent'};cursor:pointer;font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:0 7px 7px 0;color:{isActive ? 'var(--green)' : 'var(--muted)'};font-weight:{isActive ? '700' : '400'};transition:all .15s;margin-bottom:2px">{s.label}</button>
+      <button
+        onclick={() => scrollTo(s.id)}
+        style="display:block;width:100%;text-align:left;background:{isActive ? 'var(--green-dim)' : 'transparent'};border:none;border-left:2px solid {isActive ? 'var(--green)' : 'transparent'};cursor:pointer;font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:0 7px 7px 0;color:{isActive ? 'var(--green)' : 'var(--muted)'};font-weight:{isActive ? '700' : '400'};transition:all .15s;margin-bottom:2px"
+      >{s.label}</button>
     {/each}
 
     <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
       <div style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted2);margin-bottom:8px;padding-left:12px">Resources</div>
-      <a href="/api-keys" style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:7px">Get API key →</a>
-      <a href="https://pypi.org/project/echologs" rel="external noopener noreferrer" target="_blank" style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:7px">PyPI →</a>
-      <a href="https://npmjs.com/package/echologs" rel="external noopener noreferrer" target="_blank" style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:7px">npm →</a>
+      <a href="https://app.echologs.com/api-keys" style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:7px;transition:color .15s">Get API key →</a>
+      <a href="https://pypi.org/project/echologs" rel="external noopener noreferrer" target="_blank" style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:7px;transition:color .15s">PyPI →</a>
+      <a href="https://npmjs.com/package/echologs" rel="external noopener noreferrer" target="_blank" style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:7px;transition:color .15s">npm →</a>
     </div>
   </div>
 
@@ -79,7 +124,7 @@
 
     <div style="margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--border)">
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Documentation</div>
-      <h1 style="font-family:var(--font-sans);font-size:2rem;font-weight:800;margin:0 0 10px;letter-spacing:-0.5px">SDK Reference</h1>
+      <h1 style="font-family:var(--font-sans);font-size:2rem;font-weight:800;margin:0 0 10px;letter-spacing:-0.5px;color:var(--text)">SDK Reference</h1>
       <p style="font-family:var(--font-mono);font-size:13px;color:var(--muted);margin:0;line-height:1.7">Add monitoring to any Python or JavaScript script in under 2 minutes. No infrastructure changes.</p>
     </div>
 
@@ -110,7 +155,10 @@
           {@html snippets.js_quickstart.html}
         </div>
       {/if}
-      <div class="docs-callout">Make sure <code class="docs-inline">ECHOLOGS_API_KEY</code> is in your <code class="docs-inline">.env</code> file. Get your key from the <a href="/api-keys" class="docs-link">API Keys page →</a></div>
+      <div class="docs-callout">
+        Make sure <code class="docs-inline">ECHOLOGS_API_KEY</code> is set in your environment before running.
+        Get your key from the <a href="https://app.echologs.com/api-keys" class="docs-link">API Keys page →</a>
+      </div>
     </div>
 
     <!-- INSTALL -->
@@ -123,13 +171,11 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.py_install.html}
         </div>
-        <div class="docs-code-block" style="margin-top:8px">
-          <div class="docs-code-header"><span class="docs-code-lang">pip — dotenv (local dev)</span><button class="docs-copy-btn" onclick={() => copy(snippets.py_install_dotenv.raw, 'i2')}>{copied === 'i2' ? '✓ Copied' : 'Copy'}</button></div>
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          {@html snippets.py_install_dotenv.html}
+        <div class="docs-callout" style="margin-top:12px">
+          No other packages required. The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> directly from <code class="docs-inline">os.environ</code>. See the Environment variables section below for how to set it safely.
         </div>
       {:else}
-        <p class="docs-p">Requires Node.js 18 or above.</p>
+        <p class="docs-p">Requires Node.js 18 or above. No dotenv package needed.</p>
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">npm</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_install.raw, 'i3')}>{copied === 'i3' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -140,10 +186,8 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.js_install_yarn.html}
         </div>
-        <div class="docs-code-block" style="margin-top:8px">
-          <div class="docs-code-header"><span class="docs-code-lang">dotenv (local dev)</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_install_dotenv.raw, 'i5')}>{copied === 'i5' ? '✓ Copied' : 'Copy'}</button></div>
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          {@html snippets.js_install_dotenv.html}
+        <div class="docs-callout" style="margin-top:12px">
+          No dotenv package needed. The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> from <code class="docs-inline">process.env</code> automatically.
         </div>
       {/if}
     </div>
@@ -171,7 +215,7 @@
           {@html snippets.js_auto_init.html}
         </div>
         <div class="docs-code-block" style="margin-top:8px">
-          <div class="docs-code-header"><span class="docs-code-lang">explicit init — for custom name or key</span></div>
+          <div class="docs-code-header"><span class="docs-code-lang">explicit init — optional</span></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.js_explicit_init.html}
         </div>
@@ -201,7 +245,7 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.js_context.html}
         </div>
-        <p class="docs-p" style="margin-top:14px">If you need a custom script name or want to monitor only part of your code, use the explicit wrapper:</p>
+        <p class="docs-p" style="margin-top:14px">If you need a custom name or want to monitor only part of your code:</p>
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">javascript — explicit wrapper</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_context_named.raw, 'ctx4')}>{copied === 'ctx4' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -232,35 +276,87 @@
     <!-- ENV VARS -->
     <div id="envvar" class="docs-section">
       <div class="docs-h2">Environment variables</div>
-      <p class="docs-p">Never hardcode your API key. Store it in a <code class="docs-inline">.env</code> file and add it to <code class="docs-inline">.gitignore</code>.</p>
-      <div class="docs-code-block">
-        <div class="docs-code-header"><span class="docs-code-lang">.env</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_file.raw, 'env1')}>{copied === 'env1' ? '✓ Copied' : 'Copy'}</button></div>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html snippets.env_file.html}
+      <p class="docs-p">
+        Never hardcode your API key in your code. Always read it from an environment variable.
+        The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> automatically — you just need to make sure it's set before your script runs.
+      </p>
+
+      {#if activeLang === 'python'}
+
+        <!-- Production -->
+        <p class="docs-p" style="font-weight:700;color:var(--text)">Production</p>
+        <p class="docs-p">Set it in your platform's environment settings (Railway, Render, GitHub Actions, etc). The SDK picks it up automatically — no code changes needed.</p>
+        <div class="docs-code-block">
+          <div class="docs-code-header"><span class="docs-code-lang">github actions example</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env_gh')}>{copied === 'env_gh' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_github.html}
+        </div>
+
+        <!-- Local dev — Option A -->
+        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — Option A: export in terminal</p>
+        <p class="docs-p">The safest option. Set the variable once per terminal session. Nothing goes in your code or files that could accidentally be committed.</p>
+        <div class="docs-code-block">
+          <div class="docs-code-header"><span class="docs-code-lang">terminal</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_py_export.raw, 'envpy_exp')}>{copied === 'envpy_exp' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_py_export.html}
+        </div>
+
+        <!-- Local dev — Option B -->
+        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — Option B: .env file with python-dotenv</p>
+        <p class="docs-p">Convenient if you have multiple env vars. Install the package, create a <code class="docs-inline">.env</code> file, and load it at the top of your script.</p>
+        <div class="docs-code-block">
+          <div class="docs-code-header"><span class="docs-code-lang">pip — one time install</span><button class="docs-copy-btn" onclick={() => copy(snippets.py_install_dotenv.raw, 'envpy_pip')}>{copied === 'envpy_pip' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.py_install_dotenv.html}
+        </div>
+        <div class="docs-code-block" style="margin-top:8px">
+          <div class="docs-code-header"><span class="docs-code-lang">.env — never commit this file</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_file.raw, 'env_file')}>{copied === 'env_file' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_file.html}
+        </div>
+        <div class="docs-code-block" style="margin-top:8px">
+          <div class="docs-code-header"><span class="docs-code-lang">your_script.py</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_py_dotenv_import.raw, 'envpy_dot')}>{copied === 'envpy_dot' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_py_dotenv_import.html}
+        </div>
+
+      {:else}
+
+        <!-- Production -->
+        <p class="docs-p" style="font-weight:700;color:var(--text)">Production</p>
+        <p class="docs-p">Set it in your platform's environment settings. The SDK reads <code class="docs-inline">process.env.ECHOLOGS_API_KEY</code> automatically — no code changes needed.</p>
+        <div class="docs-code-block">
+          <div class="docs-code-header"><span class="docs-code-lang">github actions example</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env_gh_js')}>{copied === 'env_gh_js' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_github.html}
+        </div>
+
+        <!-- Local dev -->
+        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — .env file, no package needed</p>
+        <p class="docs-p">Node.js 20.6+ reads <code class="docs-inline">.env</code> files natively with the <code class="docs-inline">--env-file</code> flag. No dotenv package required.</p>
+        <div class="docs-code-block">
+          <div class="docs-code-header"><span class="docs-code-lang">.env — never commit this file</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_file.raw, 'envjs_file')}>{copied === 'envjs_file' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_file.html}
+        </div>
+        <div class="docs-code-block" style="margin-top:8px">
+          <div class="docs-code-header"><span class="docs-code-lang">terminal</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_js_local.raw, 'envjs_run')}>{copied === 'envjs_run' ? '✓ Copied' : 'Copy'}</button></div>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html snippets.env_js_local.html}
+        </div>
+
+      {/if}
+
+      <div class="docs-callout" style="margin-top:16px">
+        Always add <code class="docs-inline">.env</code> to your <code class="docs-inline">.gitignore</code>.
+        Your API key must never be committed to version control or hardcoded in your source code.
       </div>
-      <p class="docs-p" style="margin-top:16px">On a server or in CI, set it directly:</p>
-      <div class="docs-code-block">
-        <div class="docs-code-header"><span class="docs-code-lang">linux / mac</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_linux.raw, 'env2')}>{copied === 'env2' ? '✓ Copied' : 'Copy'}</button></div>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html snippets.env_linux.html}
-      </div>
-      <div class="docs-code-block" style="margin-top:8px">
-        <div class="docs-code-header"><span class="docs-code-lang">windows</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_windows.raw, 'env3')}>{copied === 'env3' ? '✓ Copied' : 'Copy'}</button></div>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html snippets.env_windows.html}
-      </div>
-      <div class="docs-code-block" style="margin-top:8px">
-        <div class="docs-code-header"><span class="docs-code-lang">github actions</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env4')}>{copied === 'env4' ? '✓ Copied' : 'Copy'}</button></div>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html snippets.env_github.html}
-      </div>
-      <div class="docs-callout" style="margin-top:14px">Add <code class="docs-inline">.env</code> to your <code class="docs-inline">.gitignore</code> so your API key is never committed.</div>
     </div>
 
     <!-- ERRORS -->
     <div id="errors" class="docs-section">
       <div class="docs-h2">Error handling</div>
-      <p class="docs-p">If your code throws, EchoLogs marks the execution as <strong style="color:var(--red)">failed</strong>, captures the full stack trace, and re-raises — so your existing error handling still works.</p>
+      <p class="docs-p">If your code throws, EchoLogs marks the execution as <strong style="color:var(--red)">failed</strong>, captures the full stack trace, and re-raises so your existing error handling still works.</p>
       {#if activeLang === 'python'}
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">python</span></div>
@@ -274,7 +370,10 @@
           {@html snippets.js_errors.html}
         </div>
       {/if}
-      <div class="docs-callout" style="margin-top:14px">Slack alerts require Pro or Team. Email alerts are on all plans. Configure on the <a href="/scripts" class="docs-link">Scripts page →</a></div>
+      <div class="docs-callout" style="margin-top:14px">
+        Slack alerts require Pro or Team. Email alerts are available on all plans.
+        Configure at <a href="https://app.echologs.com/scripts" class="docs-link">app.echologs.com/scripts →</a>
+      </div>
     </div>
 
     <!-- NAMING -->
@@ -285,13 +384,13 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div>
             <div style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted2);margin-bottom:8px">SDK name (permanent)</div>
-            <div style="font-family:var(--font-mono);font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 12px">invoice_puller</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px">Auto-detected or set via name= parameter</div>
+            <div style="font-family:var(--font-mono);font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text)">invoice_puller</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px">Auto-detected or set via name=</div>
           </div>
           <div>
             <div style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted2);margin-bottom:8px">Display name (editable)</div>
             <div style="font-family:var(--font-mono);font-size:12px;color:var(--green);background:var(--surface);border:1px solid var(--green-mid);border-radius:7px;padding:8px 12px">Invoice Puller</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px">Change anytime in the dashboard</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px">Change anytime in dashboard</div>
           </div>
         </div>
       </div>
