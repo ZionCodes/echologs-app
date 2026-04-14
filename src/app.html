@@ -9,6 +9,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
     %sveltekit.head%
+
+    <!-- Google Analytics (non-blocking) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2GXSWZMKPR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Defer config slightly to avoid competing with initial render
+      requestIdleCallback
+        ? requestIdleCallback(() => gtag('config', 'G-2GXSWZMKPR'))
+        : setTimeout(() => gtag('config', 'G-2GXSWZMKPR'), 0);
+    </script>
+
     <script>
       const saved = localStorage.getItem('theme')
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
