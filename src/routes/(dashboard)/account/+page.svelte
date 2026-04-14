@@ -1,17 +1,28 @@
 <script>
   import { enhance }               from '$app/forms'
+  import { page }                  from '$app/stores'
   import PageHeader                from '$lib/components/dashboard/PageHeader.svelte'
   import DashAlert                 from '$lib/components/dashboard/DashAlert.svelte'
   import { limitLabel, getLimits } from '$lib/plans.js'
   import { POLAR_CHECKOUT_LINKS }  from '$lib/polar.js'
 
   let { data, form } = $props()
-  let { user, plan, subscription, usage } = $derived(data)
 
-  let limits   = $derived(getLimits(plan))
+  // Fix: individual $derived instead of destructuring — prevents state_referenced_locally warning
+  let user         = $derived(data.user)
+  let plan         = $derived(data.plan)
+  let subscription = $derived(data.subscription)
+  let usage        = $derived(data.usage)
+  let limits       = $derived(getLimits(plan))
+
   let loading  = $state(false)
   let pass     = $state('')
   let confirm  = $state('')
+
+  // Collapsible state
+  let showAccountInfo = $state(false)
+  let showPassword    = $state(false)
+
   let matches  = $derived(confirm.length > 0 && pass === confirm)
   let mismatch = $derived(confirm.length > 0 && pass !== confirm)
 
@@ -37,7 +48,11 @@
     })
   }
 
-  const PLAN_PRICE  = { free: '$0/month', pro: '$8/month', team: '$29/month' }
+  // Derived values — all reactive now
+  let isLifetime    = $derived(plan !== 'free' && !subscription?.current_period_end)
+  let upgraded      = $derived($page.url.searchParams.get('upgrade') === 'success')
+  let planPrice     = $derived({ free: '$0/month', pro: '$8/month', team: '$29/month' }[plan] ?? '$0/month')
+  let renewsLabel   = $derived(subscription?.current_period_end ? `Renews ${formatPeriodEnd(subscription)}` : isLifetime ? 'Lifetime' : '')
 
   const USAGE_ITEMS = [
     { key: 'executions', label: 'Executions this month' },
@@ -46,70 +61,75 @@
   ]
 
   const PRICING_PLANS = [
-  {
-    key:      'free',
-    name:     'Free',
-    price:    '$0',
-    period:   '/month',
-    features: [
-      '1,000 executions/mo',
-      '3 scripts',
-      '2 API keys',
-      '14 day retention',
-      'Email alerts on failure',
-    ],
-    links: null,
-  },
-  {
-    key:      'pro',
-    name:     'Pro',
-    price:    '$8',
-    period:   '/month',
-    features: [
-      '10,000 executions/mo',
-      '25 scripts',
-      '10 API keys',
-      '90 day retention',
-      'Email + Slack alerts',
-      'Realtime streaming',
-      'Public status pages',
-    ],
-    links: {
-      monthly:  { label: 'Monthly — $8/mo',            href: POLAR_CHECKOUT_LINKS.pro_monthly  },
-      yearly:   { label: 'Yearly — $64/yr · 4mo free', href: POLAR_CHECKOUT_LINKS.pro_yearly   },
-      lifetime: { label: 'Lifetime — $149 one-time',   href: POLAR_CHECKOUT_LINKS.pro_lifetime  },
+    {
+      key:      'free',
+      name:     'Free',
+      price:    '$0',
+      period:   '/month',
+      features: [
+        '1,000 executions/mo',
+        '3 scripts',
+        '2 API keys',
+        '14 day retention',
+        'Email alerts on failure',
+      ],
+      links: null,
     },
-  },
-  {
-    key:      'team',
-    name:     'Team',
-    price:    '$29',
-    period:   '/month',
-    features: [
-      'Unlimited executions',
-      'Unlimited scripts',
-      'Unlimited API keys',
-      '1 year retention',
-      'Email + Slack alerts',
-      'Realtime streaming',
-      'Public status pages',
-      '10 team members',
-    ],
-    links: {
-      monthly:  { label: 'Monthly — $29/mo',             href: POLAR_CHECKOUT_LINKS.team_monthly  },
-      yearly:   { label: 'Yearly — $232/yr · 4mo free',  href: POLAR_CHECKOUT_LINKS.team_yearly   },
-      lifetime: { label: 'Lifetime — $499 one-time',     href: POLAR_CHECKOUT_LINKS.team_lifetime  },
+    {
+      key:      'pro',
+      name:     'Pro',
+      price:    '$8',
+      period:   '/month',
+      features: [
+        '10,000 executions/mo',
+        '25 scripts',
+        '10 API keys',
+        '90 day retention',
+        'Email + Slack alerts',
+        'Realtime streaming',
+        'Public status pages',
+      ],
+      links: {
+        monthly:  { label: 'Monthly — $8/mo',            href: POLAR_CHECKOUT_LINKS.pro_monthly  },
+        yearly:   { label: 'Yearly — $64/yr · 4mo free', href: POLAR_CHECKOUT_LINKS.pro_yearly   },
+        lifetime: { label: 'Lifetime — $149 one-time',   href: POLAR_CHECKOUT_LINKS.pro_lifetime },
+      },
     },
-  },
-]
+    {
+      key:      'team',
+      name:     'Team',
+      price:    '$29',
+      period:   '/month',
+      features: [
+        'Unlimited executions',
+        'Unlimited scripts',
+        'Unlimited API keys',
+        '1 year retention',
+        'Email + Slack alerts',
+        'Realtime streaming',
+        'Public status pages',
+        'Team members — coming soon',
+      ],
+      links: {
+        monthly:  { label: 'Monthly — $29/mo',            href: POLAR_CHECKOUT_LINKS.team_monthly  },
+        yearly:   { label: 'Yearly — $232/yr · 4mo free', href: POLAR_CHECKOUT_LINKS.team_yearly   },
+        lifetime: { label: 'Lifetime — $499 one-time',    href: POLAR_CHECKOUT_LINKS.team_lifetime },
+      },
+    },
+  ]
 
-  // Plan rank for comparison
   const PLAN_RANK = { free: 0, pro: 1, team: 2 }
 </script>
 
 <svelte:head><title>Account — EchoLogs</title></svelte:head>
 
 <PageHeader title="Account" sub="Manage your EchoLogs account and subscription" />
+
+{#if upgraded}
+  <div class="dash-alert dash-alert-success fade-up" style="margin-bottom:16px">
+    🎉 Plan upgraded successfully! Welcome to {plan.charAt(0).toUpperCase() + plan.slice(1)}.
+  </div>
+{/if}
 
 <div style="display:flex;flex-direction:column;gap:14px">
 
@@ -123,9 +143,7 @@
       <div style="display:flex;align-items:center;gap:8px">
         <div style="font-family:var(--font-mono);font-size:13px;font-weight:800;text-transform:capitalize">{plan}</div>
         <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;background:{plan === 'free' ? 'var(--surface2)' : 'var(--green-dim)'};color:{plan === 'free' ? 'var(--muted)' : 'var(--green)'};border:1px solid {plan === 'free' ? 'var(--border)' : 'var(--green-mid)'}">
-          {PLAN_PRICE[plan]}
-          {#if plan !== 'free' && !subscription?.current_period_end} · Lifetime{/if}
-          {#if subscription?.current_period_end} · Renews {formatPeriodEnd(subscription)}{/if}
+          {planPrice}{renewsLabel ? ` · ${renewsLabel}` : ''}
         </div>
       </div>
     </div>
@@ -156,13 +174,26 @@
 
   <!-- ── Plans ─────────────────────────────────────────────────────── -->
   <div class="dash-card" style="padding:24px">
-    <div class="dash-card-title" style="margin-bottom:4px">Plans</div>
-    <div class="dash-card-sub" style="margin-bottom:20px">Upgrade or manage your subscription</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="dash-card-title" style="margin-bottom:4px">Plans</div>
+        <div class="dash-card-sub">Upgrade or manage your subscription</div>
+      </div>
+      {#if plan !== 'free'}
+        <a
+          href="https://polar.sh/echologs/portal"
+          target="_blank"
+          rel="external noopener noreferrer"
+          class="dash-btn dash-btn-ghost"
+          style="font-size:11px;text-decoration:none"
+        >Manage at Polar →</a>
+      {/if}
+    </div>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       {#each PRICING_PLANS as p (p.key)}
-        {@const isCurrent  = plan === p.key}
-        {@const isUpgrade  = PLAN_RANK[p.key] > PLAN_RANK[plan]}
+        {@const isCurrent   = plan === p.key}
+        {@const isUpgrade   = PLAN_RANK[p.key] > PLAN_RANK[plan]}
         {@const isDowngrade = PLAN_RANK[p.key] < PLAN_RANK[plan]}
         <div style="
           position:relative;
@@ -194,14 +225,27 @@
           </div>
 
           {#if isCurrent}
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--green);text-align:center;padding:8px;background:var(--green-dim);border-radius:8px;border:1px solid var(--green-mid)">✓ Active</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--green);text-align:center;padding:8px;background:var(--green-dim);border-radius:8px;border:1px solid var(--green-mid)">
+                ✓ Active{isLifetime ? ' · Lifetime' : ''}
+              </div>
+              {#if plan !== 'free'}
+                <a
+                  href="https://polar.sh/echologs/portal"
+                  target="_blank"
+                  rel="external noopener noreferrer"
+                  class="dash-btn dash-btn-ghost"
+                  style="justify-content:center;text-decoration:none;font-size:10px"
+                >Manage subscription →</a>
+              {/if}
+            </div>
           {:else if isDowngrade}
             <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-align:center;padding:8px">Lower than current plan</div>
-            {:else if isUpgrade && p.links}
+          {:else if isUpgrade && p.links}
             <div style="display:flex;flex-direction:column;gap:6px">
-              <a href={p.links.monthly.href} target="_blank" rel="external noopener noreferrer" data-sveltekit-reload class="dash-btn dash-btn-primary" style="justify-content:center;text-decoration:none;font-size:11px">{p.links.monthly.label}</a>
-              <a href={p.links.yearly.href} target="_blank" rel="external noopener noreferrer" data-sveltekit-reload class="dash-btn dash-btn-ghost" style="justify-content:center;text-decoration:none;font-size:11px">{p.links.yearly.label}</a>
-              <a href={p.links.lifetime.href} target="_blank" rel="external noopener noreferrer" data-sveltekit-reload class="dash-btn dash-btn-ghost" style="justify-content:center;text-decoration:none;font-size:10px">{p.links.lifetime.label}</a>
+              <a href={p.links.monthly.href} target="_blank" rel="external noopener noreferrer" class="dash-btn dash-btn-primary" style="justify-content:center;text-decoration:none;font-size:11px">{p.links.monthly.label}</a>
+              <a href={p.links.yearly.href} target="_blank" rel="external noopener noreferrer" class="dash-btn dash-btn-ghost" style="justify-content:center;text-decoration:none;font-size:11px">{p.links.yearly.label}</a>
+              <a href={p.links.lifetime.href} target="_blank" rel="external noopener noreferrer" class="dash-btn dash-btn-ghost" style="justify-content:center;text-decoration:none;font-size:10px">{p.links.lifetime.label}</a>
             </div>
           {/if}
 
@@ -210,47 +254,84 @@
     </div>
   </div>
 
-  <!-- ── Account info + password ───────────────────────────────────── -->
+  <!-- ── Account info + password ── same side-by-side layout, now collapsible -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 
-    <div class="dash-card" style="padding:24px">
-      <div class="dash-card-title" style="margin-bottom:4px">Account info</div>
-      <div class="dash-card-sub" style="margin-bottom:20px">Your account details</div>
-      <label class="dash-form-label" for="email-display">Email</label>
-      <div id="email-display" class="dash-input" role="textbox" aria-readonly="true" tabindex="0" style="color:var(--muted);cursor:default;user-select:all">{user?.email}</div>
-      <div class="dash-input-hint">Email cannot be changed. Contact support@echologs.com if needed.</div>
+    <!-- Account info -->
+    <div class="dash-card">
+      <button
+        onclick={() => showAccountInfo = !showAccountInfo}
+        style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;width:100%;background:transparent;border:none;cursor:pointer;text-align:left"
+      >
+        <div>
+          <div class="dash-card-title" style="margin-bottom:4px">Account info</div>
+          <div class="dash-card-sub">Your account details</div>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:14px;color:var(--muted);transition:transform .2s;display:inline-block;transform:{showAccountInfo ? 'rotate(180deg)' : 'rotate(0)'}">▾</span>
+      </button>
+
+      {#if showAccountInfo}
+        <div style="padding:0 24px 20px;border-top:1px solid var(--border)">
+          <div style="padding-top:16px">
+            <label class="dash-form-label" for="email-display">Email</label>
+            <div id="email-display" class="dash-input" role="textbox" aria-readonly="true" tabindex="0" style="color:var(--muted);cursor:default;user-select:all">{user?.email}</div>
+            <div class="dash-input-hint">Email cannot be changed. Contact support@echologs.com if needed.</div>
+            <div style="margin-top:14px">
+              <div class="dash-form-label">User ID</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);word-break:break-all;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 14px">{user?.id}</div>
+            </div>
+          </div>
+        </div>
+      {/if}
     </div>
 
-    <div class="dash-card" style="padding:24px">
-      <div class="dash-card-title" style="margin-bottom:4px">Change password</div>
-      <div class="dash-card-sub" style="margin-bottom:20px">Choose a strong password</div>
-
-      <DashAlert type="error"   message={form?.error} />
-      <DashAlert type="success" message={form?.success ? form.message : null} />
-
-      <form method="POST" action="?/changePassword" use:enhance={() => { loading = true; return async ({ update }) => { await update({ reset: false }); loading = false } }}>
-        <div style="margin-bottom:14px">
-          <label class="dash-form-label" for="password">New password</label>
-          <input id="password" class="dash-input" name="password" type="password" placeholder="Min. 8 characters" minlength="8" required bind:value={pass} />
+    <!-- Change password -->
+    <div class="dash-card">
+      <button
+        onclick={() => showPassword = !showPassword}
+        style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;width:100%;background:transparent;border:none;cursor:pointer;text-align:left"
+      >
+        <div>
+          <div class="dash-card-title" style="margin-bottom:4px">Change password</div>
+          <div class="dash-card-sub">Choose a strong password</div>
         </div>
-        <div style="margin-bottom:20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <label class="dash-form-label" style="margin-bottom:0" for="confirm_password">Confirm password</label>
-            {#if matches}
-              <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--green)">✓ matches</span>
-            {:else if mismatch}
-              <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--red)">✗ no match</span>
-            {/if}
+        <span style="font-family:var(--font-mono);font-size:14px;color:var(--muted);transition:transform .2s;display:inline-block;transform:{showPassword ? 'rotate(180deg)' : 'rotate(0)'}">▾</span>
+      </button>
+
+      {#if showPassword}
+        <div style="padding:0 24px 20px;border-top:1px solid var(--border)">
+          <div style="padding-top:16px">
+            <DashAlert type="error"   message={form?.error} />
+            <DashAlert type="success" message={form?.success ? form.message : null} />
+
+            <form method="POST" action="?/changePassword" use:enhance={() => { loading = true; return async ({ update }) => { await update({ reset: false }); loading = false } }}>
+              <div style="margin-bottom:14px">
+                <label class="dash-form-label" for="password">New password</label>
+                <input id="password" class="dash-input" name="password" type="password" placeholder="Min. 8 characters" minlength="8" required bind:value={pass} />
+              </div>
+              <div style="margin-bottom:20px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                  <label class="dash-form-label" style="margin-bottom:0" for="confirm_password">Confirm password</label>
+                  {#if matches}
+                    <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--green)">✓ matches</span>
+                  {:else if mismatch}
+                    <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--red)">✗ no match</span>
+                  {/if}
+                </div>
+                <input id="confirm_password" class="dash-input" name="confirm_password" type="password" placeholder="Repeat password" required bind:value={confirm} style={mismatch ? 'border-color:var(--red)' : matches ? 'border-color:var(--green)' : ''} />
+              </div>
+              <button type="submit" class="dash-btn dash-btn-primary" style="width:100%" disabled={loading || mismatch || pass.length < 8}>
+                {loading ? 'Updating...' : 'Update password'}
+              </button>
+            </form>
           </div>
-          <input id="confirm_password" class="dash-input" name="confirm_password" type="password" placeholder="Repeat password" required bind:value={confirm} style={mismatch ? 'border-color:var(--red)' : matches ? 'border-color:var(--green)' : ''} />
         </div>
-        <button type="submit" class="dash-btn dash-btn-primary" style="width:100%" disabled={loading || mismatch || pass.length < 8}>{loading ? 'Updating...' : 'Update password'}</button>
-      </form>
+      {/if}
     </div>
 
   </div>
 
-  <!-- ── Danger zone ───────────────────────────────────────────────── -->
+  <!-- ── Danger zone ── -->
   <div class="dash-card" style="padding:24px;border-color:#dc262630">
     <div class="dash-card-title" style="margin-bottom:4px;color:var(--red)">Danger zone</div>
     <div class="dash-card-sub" style="margin-bottom:20px">Permanent and irreversible actions</div>
@@ -259,7 +340,10 @@
         <div style="font-family:var(--font-sans);font-size:13px;font-weight:700">Delete account</div>
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:3px">Permanently deletes your account and all data</div>
       </div>
-      <button class="dash-btn dash-btn-danger" onclick={() => alert('To delete your account email support@echologs.com — we will process within 24 hours.')}>Delete</button>
+      <button
+        class="dash-btn dash-btn-danger"
+        onclick={() => alert('To delete your account email support@echologs.com — we will process within 24 hours.')}
+      >Delete</button>
     </div>
   </div>
 
