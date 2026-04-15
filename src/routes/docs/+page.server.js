@@ -1,6 +1,7 @@
 import { highlight } from '$lib/server/highlight.js'
 
 const snippets = {
+  // ── Python ────────────────────────────────────────────────────────
   py_install: { code: `pip install echologs`, lang: 'shellscript' },
 
   py_install_dotenv: { code: `pip install python-dotenv`, lang: 'shellscript' },
@@ -87,15 +88,17 @@ scheduler.start()`, lang: 'python' },
 
   js_quickstart: { code: `import echologs from 'echologs'
 
-// ECHOLOGS_API_KEY is read from process.env automatically
+// SDK auto-reads .env file if ECHOLOGS_API_KEY is not already set
+// In production env vars are injected by the platform automatically
 console.log('Fetching invoices...')
 const data = await fetchInvoices()
 console.log('Done. ' + data.length + ' processed.')`, lang: 'javascript' },
 
   js_auto_init: { code: `import echologs from 'echologs'
-// Reads ECHOLOGS_API_KEY from process.env automatically
-// Production: set in Railway, Render, GitHub Actions etc
-// Local dev:  node --env-file=.env your_script.js`, lang: 'javascript' },
+// SDK reads ECHOLOGS_API_KEY from:
+// 1. process.env (production — injected by platform)
+// 2. .env file in current directory (local dev — read automatically)
+// You never need to pass the key manually`, lang: 'javascript' },
 
   js_explicit_init: { code: `import echologs from 'echologs'
 
@@ -180,8 +183,13 @@ set    ECHOLOGS_API_KEY=el_your_api_key_here   # windows
 
 python your_script.py`, lang: 'shellscript' },
 
-  env_js_local: { code: `# Node.js 20.6+ — reads .env file directly, no package needed
-node --env-file=.env your_script.js`, lang: 'shellscript' },
+  env_js_local: { code: `# Create a .env file — SDK reads it automatically
+# No flags, no dotenv package, no extra steps
+
+ECHOLOGS_API_KEY=el_your_api_key_here
+
+# Then just run normally:
+node your_script.mjs`, lang: 'shellscript' },
 
   env_linux:  { code: `export ECHOLOGS_API_KEY=el_your_api_key_here`, lang: 'shellscript' },
   env_windows: { code: `set ECHOLOGS_API_KEY=el_your_api_key_here`,   lang: 'shellscript' },

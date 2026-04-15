@@ -143,6 +143,10 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.py_quickstart.html}
         </div>
+        <div class="docs-callout" style="margin-top:8px">
+          Set <code class="docs-inline">ECHOLOGS_API_KEY</code> in your terminal before running.
+          Get your key from the <a href="https://app.echologs.com/api-keys" class="docs-link">API Keys page →</a>
+        </div>
       {:else}
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">terminal</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_install.raw, 'qs3')}>{copied === 'qs3' ? '✓ Copied' : 'Copy'}</button></div>
@@ -150,15 +154,15 @@
           {@html snippets.js_install.html}
         </div>
         <div class="docs-code-block" style="margin-top:8px">
-          <div class="docs-code-header"><span class="docs-code-lang">your_script.js</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_quickstart.raw, 'qs4')}>{copied === 'qs4' ? '✓ Copied' : 'Copy'}</button></div>
+          <div class="docs-code-header"><span class="docs-code-lang">your_script.mjs</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_quickstart.raw, 'qs4')}>{copied === 'qs4' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.js_quickstart.html}
         </div>
+        <div class="docs-callout" style="margin-top:8px">
+          Create a <code class="docs-inline">.env</code> file with your API key — the SDK reads it automatically.
+          Get your key from the <a href="https://app.echologs.com/api-keys" class="docs-link">API Keys page →</a>
+        </div>
       {/if}
-      <div class="docs-callout">
-        Make sure <code class="docs-inline">ECHOLOGS_API_KEY</code> is set in your environment before running.
-        Get your key from the <a href="https://app.echologs.com/api-keys" class="docs-link">API Keys page →</a>
-      </div>
     </div>
 
     <!-- INSTALL -->
@@ -172,10 +176,10 @@
           {@html snippets.py_install.html}
         </div>
         <div class="docs-callout" style="margin-top:12px">
-          No other packages required. The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> directly from <code class="docs-inline">os.environ</code>. See the Environment variables section below for how to set it safely.
+          No other packages required. The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> from <code class="docs-inline">os.environ</code> automatically. See the Environment variables section for how to set it safely.
         </div>
       {:else}
-        <p class="docs-p">Requires Node.js 18 or above. No dotenv package needed.</p>
+        <p class="docs-p">Requires Node.js 18 or above.</p>
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">npm</span><button class="docs-copy-btn" onclick={() => copy(snippets.js_install.raw, 'i3')}>{copied === 'i3' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -187,7 +191,7 @@
           {@html snippets.js_install_yarn.html}
         </div>
         <div class="docs-callout" style="margin-top:12px">
-          No dotenv package needed. The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> from <code class="docs-inline">process.env</code> automatically.
+          No dotenv package needed. The SDK automatically reads <code class="docs-inline">ECHOLOGS_API_KEY</code> from <code class="docs-inline">process.env</code> in production, and from your <code class="docs-inline">.env</code> file locally.
         </div>
       {/if}
     </div>
@@ -276,36 +280,29 @@
     <!-- ENV VARS -->
     <div id="envvar" class="docs-section">
       <div class="docs-h2">Environment variables</div>
-      <p class="docs-p">
-        Never hardcode your API key in your code. Always read it from an environment variable.
-        The SDK reads <code class="docs-inline">ECHOLOGS_API_KEY</code> automatically — you just need to make sure it's set before your script runs.
-      </p>
+      <p class="docs-p">Never hardcode your API key. Always set it as an environment variable — the SDK reads it automatically.</p>
 
       {#if activeLang === 'python'}
-
-        <!-- Production -->
         <p class="docs-p" style="font-weight:700;color:var(--text)">Production</p>
-        <p class="docs-p">Set it in your platform's environment settings (Railway, Render, GitHub Actions, etc). The SDK picks it up automatically — no code changes needed.</p>
+        <p class="docs-p">Set it in your platform's environment settings. The SDK picks it up automatically — no code changes needed.</p>
         <div class="docs-code-block">
-          <div class="docs-code-header"><span class="docs-code-lang">github actions example</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env_gh')}>{copied === 'env_gh' ? '✓ Copied' : 'Copy'}</button></div>
+          <div class="docs-code-header"><span class="docs-code-lang">github actions</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env_gh')}>{copied === 'env_gh' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.env_github.html}
         </div>
 
-        <!-- Local dev — Option A -->
-        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — Option A: export in terminal</p>
-        <p class="docs-p">The safest option. Set the variable once per terminal session. Nothing goes in your code or files that could accidentally be committed.</p>
+        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local — Option A: export in terminal (safest)</p>
+        <p class="docs-p">Set the variable once per terminal session. Nothing goes in any file that could be committed.</p>
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">terminal</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_py_export.raw, 'envpy_exp')}>{copied === 'envpy_exp' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.env_py_export.html}
         </div>
 
-        <!-- Local dev — Option B -->
-        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — Option B: .env file with python-dotenv</p>
-        <p class="docs-p">Convenient if you have multiple env vars. Install the package, create a <code class="docs-inline">.env</code> file, and load it at the top of your script.</p>
+        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local — Option B: .env file with python-dotenv</p>
+        <p class="docs-p">Convenient if you have many env vars. Install python-dotenv once, create a <code class="docs-inline">.env</code> file, and load it at the top of your script.</p>
         <div class="docs-code-block">
-          <div class="docs-code-header"><span class="docs-code-lang">pip — one time install</span><button class="docs-copy-btn" onclick={() => copy(snippets.py_install_dotenv.raw, 'envpy_pip')}>{copied === 'envpy_pip' ? '✓ Copied' : 'Copy'}</button></div>
+          <div class="docs-code-header"><span class="docs-code-lang">pip — one time</span><button class="docs-copy-btn" onclick={() => copy(snippets.py_install_dotenv.raw, 'envpy_pip')}>{copied === 'envpy_pip' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.py_install_dotenv.html}
         </div>
@@ -322,18 +319,19 @@
 
       {:else}
 
-        <!-- Production -->
         <p class="docs-p" style="font-weight:700;color:var(--text)">Production</p>
-        <p class="docs-p">Set it in your platform's environment settings. The SDK reads <code class="docs-inline">process.env.ECHOLOGS_API_KEY</code> automatically — no code changes needed.</p>
+        <p class="docs-p">Set it in your platform's environment settings. The SDK reads <code class="docs-inline">process.env.ECHOLOGS_API_KEY</code> automatically.</p>
         <div class="docs-code-block">
-          <div class="docs-code-header"><span class="docs-code-lang">github actions example</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env_gh_js')}>{copied === 'env_gh_js' ? '✓ Copied' : 'Copy'}</button></div>
+          <div class="docs-code-header"><span class="docs-code-lang">github actions</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_github.raw, 'env_gh_js')}>{copied === 'env_gh_js' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.env_github.html}
         </div>
 
-        <!-- Local dev -->
-        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — .env file, no package needed</p>
-        <p class="docs-p">Node.js 20.6+ reads <code class="docs-inline">.env</code> files natively with the <code class="docs-inline">--env-file</code> flag. No dotenv package required.</p>
+        <p class="docs-p" style="font-weight:700;color:var(--text);margin-top:20px">Local development — .env file</p>
+        <p class="docs-p">
+          Create a <code class="docs-inline">.env</code> file with your API key.
+          The SDK reads it automatically — no dotenv package, no flags, no extra steps. Just run your script normally.
+        </p>
         <div class="docs-code-block">
           <div class="docs-code-header"><span class="docs-code-lang">.env — never commit this file</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_file.raw, 'envjs_file')}>{copied === 'envjs_file' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -343,6 +341,9 @@
           <div class="docs-code-header"><span class="docs-code-lang">terminal</span><button class="docs-copy-btn" onclick={() => copy(snippets.env_js_local.raw, 'envjs_run')}>{copied === 'envjs_run' ? '✓ Copied' : 'Copy'}</button></div>
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html snippets.env_js_local.html}
+        </div>
+        <div class="docs-callout" style="margin-top:12px">
+          If <code class="docs-inline">ECHOLOGS_API_KEY</code> is already set in your shell or injected by your platform, the SDK uses that and ignores the <code class="docs-inline">.env</code> file entirely.
         </div>
 
       {/if}
