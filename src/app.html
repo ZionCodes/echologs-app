@@ -2,33 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Monitoring and observability for Python and AI scripts" />
-    <meta name="theme-color" content="#080b0f" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="Monitoring and observability for Python and JavaScript scripts" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <meta property="og:image" content="https://app.echologs.com/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://app.echologs.com/og.png" />
     %sveltekit.head%
-
-    <!-- Google Analytics (non-blocking) -->
+    <!-- Google Analytics non-blocking -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-2GXSWZMKPR"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
-      // Defer config slightly to avoid competing with initial render
       requestIdleCallback
         ? requestIdleCallback(() => gtag('config', 'G-2GXSWZMKPR'))
         : setTimeout(() => gtag('config', 'G-2GXSWZMKPR'), 0);
-    </script>
-
-    <script>
-      const saved = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      if (saved === 'dark' || (!saved && prefersDark)) {
-        document.documentElement.classList.add('dark')
-      }
     </script>
   </head>
   <body data-sveltekit-preload-data="hover">
